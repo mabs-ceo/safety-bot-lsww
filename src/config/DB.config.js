@@ -46,10 +46,7 @@ const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 5000;
 const ATLASDB_URI = process.env.ATLASDB_URI;
 const buildMongoURI = () => {
-  if (process.env.DB_URI) return process.env.DB_URI;
-
-  const password = encodeURIComponent(process.env.PASSWORD || "");
-  return `mongodb+srv://admin:${password}@cluster0.kbkoim3.mongodb.net/safety?retryWrites=true&w=majority&appName=Cluster0`;
+  return ATLASDB_URI;
 };
 
 const connectDB = async (attempt = 1) => {
@@ -60,7 +57,7 @@ const connectDB = async (attempt = 1) => {
       `Connecting to MongoDB Atlas... (attempt ${attempt}/${MAX_RETRIES})`,
     );
 
-    await mongoose.connect(ATLASDB_URI, {
+    await mongoose.connect(mongoURI, {
       serverSelectionTimeoutMS: 30000,
     });
 
