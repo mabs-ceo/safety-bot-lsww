@@ -4,7 +4,8 @@ dotenv.config();
 const connectDB = require("./src/config/DB.config");
 const { whatsappQueue } = require("./src/queues/whatsapp.queue");
 const cors = require("cors");
-
+const ALLOWED_GROUP_ID = process.env.GROUP_ID;
+const KEYWORDS = ["finding:", "close$:", "view$"];
 // Starts the BullMQ worker in this same process — it listens on the
 // "whatsapp-messages" queue and calls processWhatsappMessage() for each
 // job (finding: / close: / view$ logic all lives there now, not here).
@@ -43,32 +44,44 @@ app.get("/", async (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   console.log("✅ Webhook called");
-  const messages = req.body?.messages || [];
-  const ALLOWED_GROUP_ID = process.env.GROUP_ID;
 
-  // This handler does ONE job: filter + enqueue. It does not parse
-  // "finding:"/"close:"/"view$", does not call replyToGroup, and does
-  // not know about safetyFindingsController — all of that lives in
-  // src/services/whatsapp.service.js and runs inside the worker.
-  //
-  // Keeping that logic out of here is what lets res.sendStatus(200) fire
-  // once, immediately, regardless of which command was sent or whether
-  // it succeeds — the webhook response and the actual processing are
-  // now fully decoupled.
-  for (const message of messages) {
-    if (message.chat_id !== ALLOWED_GROUP_ID) continue;
+  const messages = req.body?.messages ?? [];
 
-    // jobId: message.id makes this idempotent — if whapi.cloud redelivers
-    // the same webhook payload, BullMQ won't queue a duplicate job.
-    await whatsappQueue.add(
-      "process-message",
-      { message, allowedGroupId: ALLOWED_GROUP_ID },
-      { jobId: message.id },
-    );
-    console.log(`📥 Queued message ${message.id}`);
+  if (!messages.length) {
+    return res.sendStatus(200);
   }
 
-  // Single response, always last, never inside the loop.
+  const jobs = [];
+
+  for (const message of messages) {
+    console.log(`📥 Received ${message.id} from ${message.chat_id}`);
+
+    if (message.chat_id !== ALLOWED_GROUP_ID) continue;
+
+    const text = message.text?.body || message.image?.caption;
+
+    if (!text) continue;
+
+    const lower = text.toLowerCase();
+
+    if (!KEYWORDS.some((keyword) => lower.includes(keyword))) {
+      console.log(`⏭️ Skipped ${message.id}`);
+      continue;
+    }
+
+    console.log(`📥 Queued ${message.id}`);
+
+    jobs.push(
+      whatsappQueue.add("process-message", { message }, { jobId: message.id }),
+    );
+  }
+
+  try {
+    await Promise.all(jobs);
+  } catch (err) {
+    console.error("Failed to enqueue jobs:", err);
+  }
+
   res.sendStatus(200);
 });
 
