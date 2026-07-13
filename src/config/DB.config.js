@@ -32,7 +32,7 @@ const connectDB = async () => {
 
     console.log("✅ MongoDB Atlas connected successfully");
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     process.exit(1);
   }
 };
