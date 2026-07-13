@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config();
 const connectDB = require("./src/config/DB.config");
 const { whatsappQueue } = require("./src/queues/whatsapp.queue");
 const cors = require("cors");
@@ -9,8 +10,6 @@ const cors = require("cors");
 // job (finding: / close: / view$ logic all lives there now, not here).
 require("./src/workers/whatsapp.worker");
 
-dotenv.config();
-// corsoption localhlost:3000
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
 const corsOptions = [
@@ -31,7 +30,6 @@ const app = express();
 app.use(cors(corsOptions));
 const PORT = process.env.PORT || 3000;
 
-connectDB();
 app.use(express.json());
 
 app.get("/", async (req, res) => {
@@ -74,6 +72,12 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const start = async () => {
+  await connectDB();
+
+  app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
+  });
+};
+
+start();
