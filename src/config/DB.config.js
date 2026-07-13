@@ -1,0 +1,40 @@
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+dotenv.config();
+// const connectDB = async () => {
+//   try {
+//     console.log("Connecting to MongoDB Atlas...");
+//     const mongoURI =
+//       process.env.DB_URI ||
+//       `mongodb+srv://admin:${process.env.PASSWORD}@cluster0.kbkoim3.mongodb.net/?appName=Cluster0`;
+
+//     console.log("MongoDB URI:", mongoURI); // Log the MongoDB URI for debugging
+//     await mongoose.connect(mongoURI);
+
+//     console.log("MongoDB Atlas connected successfully");
+//   } catch (error) {
+//     console.error("MongoDB connection error:", error);
+//     process.exit(1);
+//   }
+// };
+
+const connectDB = async () => {
+  try {
+    console.log("Connecting to MongoDB Atlas...");
+
+    const mongoURI =
+      process.env.DB_URI ||
+      `mongodb+srv://admin:${process.env.PASSWORD}@cluster0.kbkoim3.mongodb.net/safety?retryWrites=true&w=majority&appName=Cluster0`;
+
+    await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 30000,
+    });
+
+    console.log("✅ MongoDB Atlas connected successfully");
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
