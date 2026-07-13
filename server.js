@@ -69,7 +69,7 @@ app.post("/webhook", async (req, res) => {
       continue;
     }
 
-    console.log(`📥 Queued ${message.id}`);
+    console.log("not skipping");
 
     jobs.push(
       whatsappQueue.add("process-message", { message }, { jobId: message.id }),
@@ -77,6 +77,9 @@ app.post("/webhook", async (req, res) => {
   }
 
   try {
+    console.log(
+      `📥 Enqueuing ${jobs.length} jobs... called BULLMQ using UPSTASH`,
+    );
     await Promise.all(jobs);
   } catch (err) {
     console.error("Failed to enqueue jobs:", err);
