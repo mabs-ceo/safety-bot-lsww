@@ -5,7 +5,7 @@ const connectDB = require("./src/config/DB.config");
 const { whatsappQueue } = require("./src/queues/whatsapp.queue");
 const cors = require("cors");
 const ALLOWED_GROUP_ID = process.env.GROUP_ID;
-const KEYWORDS = ["finding:", "close$:", "view$"];
+const KEYWORDS = ["finding:", "close$", "view$"];
 // Starts the BullMQ worker in this same process — it listens on the
 // "whatsapp-messages" queue and calls processWhatsappMessage() for each
 // job (finding: / close: / view$ logic all lives there now, not here).
