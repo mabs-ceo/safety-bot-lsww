@@ -5,21 +5,15 @@ dotenv.config();
 const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 5000;
 const ATLASDB_URI = process.env.ATLASDB_URI;
-const buildMongoURI = () => {
-  return ATLASDB_URI;
-};
 
 const connectDB = async (attempt = 1) => {
-  const mongoURI = buildMongoURI();
-
   try {
     console.log(
       `Connecting to MongoDB Atlas... (attempt ${attempt}/${MAX_RETRIES})`,
     );
+    console.log(`Using URI: ${ATLASDB_URI}`);
 
-    await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 30000,
-    });
+    await mongoose.connect(ATLASDB_URI);
 
     console.log("✅ MongoDB Atlas connected successfully");
   } catch (err) {
