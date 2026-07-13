@@ -3,20 +3,20 @@ const connection = require("../config/redis.config");
 const { QUEUE_NAME } = require("../queues/whatsapp.queue");
 const { processWhatsappMessage } = require("../services/whatsapp.service");
 const cors = require("cors");
-
+const ALLOWED_GROUP_ID = process.env.GROUP_ID;
 // The Worker listens on the same queue name the producer (webhook) pushes to.
 // job.data is whatever was passed to queue.add() — here it's { message, allowedGroupId }.
 const whatsappWorker = new Worker(
   QUEUE_NAME,
   async (job) => {
-    const { message, allowedGroupId } = job.data;
+    const { message } = job.data;
     console.log(
       `⚙️  Processing job ${job.id} (attempt ${job.attemptsMade + 1})`,
     );
     // The `return` here matters: BullMQ saves whatever the processor
     // returns as job.returnvalue, which is how the /recent endpoint
     // below finds out what happened without touching a database.
-    return await processWhatsappMessage(message, allowedGroupId);
+    return await processWhatsappMessage(message, ALLOWED_GROUP_ID);
   },
   {
     connection,
