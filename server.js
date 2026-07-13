@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./src/config/DB.config");
 const { whatsappQueue } = require("./src/queues/whatsapp.queue");
+const cors = require("cors");
 
 // Starts the BullMQ worker in this same process — it listens on the
 // "whatsapp-messages" queue and calls processWhatsappMessage() for each
@@ -9,14 +10,31 @@ const { whatsappQueue } = require("./src/queues/whatsapp.queue");
 require("./src/workers/whatsapp.worker");
 
 dotenv.config();
+// corsoption localhlost:3000
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
+const corsOptions = [
+  {
+    origin: BASE_URL,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
+  // {
+  //   origin: "http://localhost:3000",
+  //   methods: ["GET", "POST"],
+  //   allowedHeaders: ["Content-Type", "Authorization"],
+  //   credentials: true,
+  // },
+];
 const app = express();
+app.use(cors(corsOptions));
 const PORT = process.env.PORT || 3000;
 
 connectDB();
 app.use(express.json());
 
-app.get("/test", async (req, res) => {
+app.get("/", async (req, res) => {
   try {
     console.log("✅ Selected group fetched successfully");
     res.json("webhook working");

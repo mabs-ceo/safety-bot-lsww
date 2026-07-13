@@ -2,6 +2,7 @@ const { Worker } = require("bullmq");
 const connection = require("../config/redis.config");
 const { QUEUE_NAME } = require("../queues/whatsapp.queue");
 const { processWhatsappMessage } = require("../services/whatsapp.service");
+const cors = require("cors");
 
 // The Worker listens on the same queue name the producer (webhook) pushes to.
 // job.data is whatever was passed to queue.add() — here it's { message, allowedGroupId }.
