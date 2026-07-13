@@ -12,7 +12,7 @@ async function safetyFindingsController(props) {
 
   const now = new Date();
   const readable = now.toISOString().slice(0, 10).replace(/-/g, ""); // 20260628
-  const observationId = `LSWW-SOF-${readable}-${number}`;
+  const observationId = `${readable}-${number}`;
 
   console.log("observationId", observationId);
   const newObservation = new SafetyObservationModel({
@@ -90,7 +90,7 @@ async function getSafetyObservationsummary(text) {
         status: "Open",
       }).sort({ observationDate: -1 });
       if (!openFindings || openFindings.length === 0) {
-        throw new Error("No open observations found");
+        return "No open observations found";
       }
       const summary = formatSummary(openFindings);
       return summary;
@@ -98,7 +98,7 @@ async function getSafetyObservationsummary(text) {
 
     const monthNumber = monthMap[month?.toLowerCase()];
     if (!monthNumber) {
-      throw new Error("Invalid month");
+      return "Invalid month";
     }
     const currentYear = new Date().getFullYear();
     const findings = await SafetyObservationModel.find({
@@ -108,7 +108,7 @@ async function getSafetyObservationsummary(text) {
       },
     }).sort({ observationDate: -1 });
     if (!findings || findings.length === 0) {
-      throw new Error("Observation not found");
+      return "No observations found for the specified month";
     }
     const summary = formatSummary(findings);
     return summary;
