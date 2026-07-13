@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🦺 Safety Observation WhatsApp Bot
 
 A WhatsApp-based safety observation logging system that lets field teams report, track, and close safety findings directly from a WhatsApp group — no separate app required.
@@ -131,3 +132,7 @@ npm run worker
 ## 📄 License
 
 MIT
+=======
+# safety-bot-lsww
+WhatsApp bot for logging field safety observations via simple chat commands. Built with whapi.cloud, BullMQ, and Redis for async, retry-safe message processing. Supports creating findings, closing single or all observations, and viewing monthly or open-status summaries — no separate app needed for on-site safety reporting.
+>>>>>>> 157002bd793cd6bd7ffaad3e381d261924cab8e0
