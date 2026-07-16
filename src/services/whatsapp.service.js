@@ -41,6 +41,7 @@ async function replyToGroup(groupId, text) {
  * @param {string} allowedGroupId - the group ID the bot listens to
  */
 async function processWhatsappMessage(message, allowedGroupId) {
+  console.log("✅ Processing message:", message);
   const userText = message.text?.body || message.image?.caption;
 
   // Admin override command
