@@ -4,14 +4,15 @@ const {
   getSafetyObservationsummary,
   closeSafetyObservationController,
   closeAllSafetyObservationsController,
+  reopenSafetyObservationController,
 } = require("../modules/safety_observation/controller");
 
 const token = process.env.WHATSAPI_TOKEN;
-
+const groupId = process.env.GROUP_ID;
 /**
  * Sends a text reply back to the WhatsApp group via whapi.cloud.
  */
-async function replyToGroup(groupId, text) {
+async function replyToGroup(text) {
   try {
     await axios.post(
       `https://gate.whapi.cloud/messages/text`,
@@ -40,14 +41,14 @@ async function replyToGroup(groupId, text) {
  * @param {object} message - a single WhatsApp message object from whapi.cloud
  * @param {string} allowedGroupId - the group ID the bot listens to
  */
-async function processWhatsappMessage(message, allowedGroupId) {
+async function processWhatsappMessage(message) {
   console.log("✅ Processing message:", message);
   const userText = message.text?.body || message.image?.caption;
 
   // Admin override command
   if (message.from_me && userText === "!listen") {
     console.log("✅ Admin command: listening mode on");
-    await replyToGroup(allowedGroupId, "✅ I am now listening.");
+    await replyToGroup("✅ I am now listening.");
     return;
   }
 
@@ -71,7 +72,7 @@ async function processWhatsappMessage(message, allowedGroupId) {
     const party = getValue(lines[1]) || "unknown";
     const location = getValue(lines[2]) || "unknown";
     const observedBy = message.from;
-
+    const id = message.id;
     if (!findingsText || !party || !location) {
       await replyToGroup(
         allowedGroupId,
@@ -87,10 +88,10 @@ async function processWhatsappMessage(message, allowedGroupId) {
       observedBy,
       location,
       findingsText,
+      id,
     });
 
     await replyToGroup(
-      allowedGroupId,
       `✅ Safety observation ID for finding "${findingsText}": ${safetyObservationFinding}`,
     );
 
@@ -111,19 +112,47 @@ async function processWhatsappMessage(message, allowedGroupId) {
 
   // --- "close:" → close an existing safety observation ---
   if (userText.toLowerCase().includes("close$")) {
+    console.log("✅ Closing safety observation:", userText);
+    const actionTakenBy = message.from;
     const observationId = userText.split("$")[1].trim();
+    const actionStatement = userText.split("$")[2]?.trim() || null;
     const closeAll = observationId.toLowerCase() === "all";
     let closedObservation;
     if (closeAll) {
       closedObservation = await closeAllSafetyObservationsController();
+
       await replyToGroup(allowedGroupId, `✅ Closed all safety observations.`);
     } else {
-      closedObservation = await closeSafetyObservationController(observationId);
+      closedObservation = await closeSafetyObservationController(
+        observationId,
+        actionTakenBy,
+        actionStatement || "No action statement provided",
+      );
+      console.log("✅ Closed safety observation:", closedObservation);
       await replyToGroup(
-        allowedGroupId,
-        `✅ Closed safety observation ID: ${closedObservation.observationId}`,
+        `✅ Closed safety observation ID: ${closedObservation.observationId} by ${closedObservation.actionTakenBy}. Action statement: ${closedObservation.actionStatment || "No action statement provided"} `,
       );
     }
+    return;
+  }
+  if (userText.toLowerCase().includes("no$")) {
+    console.log("✅ Reopening safety observation:", userText);
+    const actionTakenBy = message.from;
+
+    const observationId = userText.split("$")[1].trim();
+    const flagStatement = userText.split("$")[2]?.trim() || null;
+    const closeAll = observationId.toLowerCase() === "all";
+    let reopenedObservation;
+
+    reopenedObservation = await reopenSafetyObservationController(
+      observationId,
+      flagStatement || "No flag statement provided",
+    );
+    console.log("✅ Reopened safety observation:", reopenedObservation);
+    await replyToGroup(
+      `✅ Reopened safety observation ID: ${reopenedObservation.observationId}. Flag statement: ${reopenedObservation.flagStatement || "No flag statement provided"} `,
+    );
+
     return;
   }
 
@@ -158,7 +187,6 @@ async function processWhatsappMessage(message, allowedGroupId) {
 
     if (!isOpenRequest && !months.includes(month.toLowerCase())) {
       await replyToGroup(
-        allowedGroupId,
         `❌ Invalid month. Please use one of the following: ${months.join(", ")}`,
       );
       return;
@@ -168,7 +196,6 @@ async function processWhatsappMessage(message, allowedGroupId) {
     const observations = await getSafetyObservationsummary(textToSend);
 
     await replyToGroup(
-      allowedGroupId,
       observations || `No safety observations found for ${textToSend}.`,
     );
     return;

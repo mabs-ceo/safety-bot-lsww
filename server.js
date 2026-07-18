@@ -4,8 +4,9 @@ dotenv.config();
 const connectDB = require("./src/config/DB.config");
 const { whatsappQueue } = require("./src/queues/whatsapp.queue");
 const cors = require("cors");
+const { replyToGroup } = require("./src/services/whatsapp.service");
 const ALLOWED_GROUP_ID = process.env.GROUP_ID;
-const KEYWORDS = ["finding:", "close$", "view$"];
+const KEYWORDS = ["finding:", "close$", "view$", "no$"];
 // Starts the BullMQ worker in this same process — it listens on the
 // "whatsapp-messages" queue and calls processWhatsappMessage() for each
 // job (finding: / close: / view$ logic all lives there now, not here).
@@ -46,7 +47,11 @@ app.post("/webhook", async (req, res) => {
   console.log("✅ Webhook called");
 
   const messages = req.body?.messages ?? [];
-
+  if (messages.length && messages[0].chat_id !== ALLOWED_GROUP_ID) {
+    console.log(`⏭️ Skipped ${messages[0].id} from ${messages[0].chat_id}`);
+    return res.sendStatus(200);
+  }
+  console.log(`📥 Received ${messages.length} messages: `, messages);
   if (!messages.length) {
     return res.sendStatus(200);
   }
@@ -58,11 +63,31 @@ app.post("/webhook", async (req, res) => {
 
     if (message.chat_id !== ALLOWED_GROUP_ID) continue;
 
-    const text = message.text?.body || message.image?.caption;
-
+    let text = message.text?.body || message.image?.caption;
+    const context = message.context?.quoted_id || null;
+    if (context) {
+      console.log(`✅ Quoted message context: ${context}`);
+      let subKeyWOrd = "";
+    }
     if (!text) continue;
 
     const lower = text.toLowerCase();
+    const authorizedNumbers = process.env.AUTHORIZED_NUMBERS.split(",");
+    console.log("✅ Authorized numbers:", authorizedNumbers);
+    if (lower.includes("view$") && !authorizedNumbers.includes(message.from)) {
+      await replyToGroup(
+        `❌ You are not authorized to view safety observations summary.`,
+      );
+      return;
+    }
+
+    const safetyNum = process.env.SAFETY_NUM;
+    if (lower.includes("no$") && message.from !== safetyNum) {
+      await replyToGroup(
+        `❌ You are not authorized to reopen safety observations.`,
+      );
+      return;
+    }
 
     if (!KEYWORDS.some((keyword) => lower.includes(keyword))) {
       console.log(`⏭️ Skipped ${message.id}`);

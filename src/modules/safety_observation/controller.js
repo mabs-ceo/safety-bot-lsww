@@ -1,7 +1,7 @@
 const { formatSummary } = require("../../utils/whatsapp/format.utils");
 const SafetyObservationModel = require("./model");
 async function safetyFindingsController(props) {
-  const { party, observedBy, location, findingsText } = props;
+  const { party, observedBy, location, findingsText, id } = props;
   const todateCount = await SafetyObservationModel.countDocuments({
     observationDate: {
       $gte: new Date(new Date().setHours(0, 0, 0, 0)),
@@ -17,6 +17,7 @@ async function safetyFindingsController(props) {
   console.log("observationId", observationId);
   const newObservation = new SafetyObservationModel({
     observationId,
+    messageId: id,
     observedBy,
     location,
     category: "Near Miss",
@@ -37,7 +38,11 @@ async function safetyFindingsController(props) {
   return observationId;
 }
 
-async function closeSafetyObservationController(observationId) {
+async function closeSafetyObservationController(
+  observationId,
+  actionTakenBy,
+  actionStatment,
+) {
   try {
     const observation = await SafetyObservationModel.findOne({
       observationId,
@@ -46,10 +51,32 @@ async function closeSafetyObservationController(observationId) {
       throw new Error("Observation not found");
     }
     observation.status = "Closed";
+    observation.actionTakenBy = actionTakenBy;
+    observation.actionStatment = actionStatment;
+    observation.rectificationDate = new Date();
     await observation.save();
     return observation;
   } catch (error) {
     console.error("Error closing observation:", error);
+    throw error;
+  }
+}
+async function reopenSafetyObservationController(observationId, flagStatement) {
+  try {
+    const observation = await SafetyObservationModel.findOne({
+      observationId,
+    });
+    if (!observation) {
+      throw new Error("Observation not found");
+    }
+
+    observation.status = "Reopened";
+    observation.flagStatement = flagStatement;
+    observation.rectificationDate = null; // Reset rectification date when reopening
+    await observation.save();
+    return observation;
+  } catch (error) {
+    console.error("Error reopening observation:", error);
     throw error;
   }
 }
@@ -87,7 +114,7 @@ async function getSafetyObservationsummary(text) {
   try {
     if (text.toLowerCase() === "open") {
       const openFindings = await SafetyObservationModel.find({
-        status: "Open",
+        status: ["Open", "In Progress", "Reopened"],
       }).sort({ observationDate: -1 });
       if (!openFindings || openFindings.length === 0) {
         return "No open observations found";
@@ -123,4 +150,5 @@ module.exports = {
   closeSafetyObservationController,
   getSafetyObservationsummary,
   closeAllSafetyObservationsController,
+  reopenSafetyObservationController,
 };

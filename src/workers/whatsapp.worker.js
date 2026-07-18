@@ -10,6 +10,7 @@ const whatsappWorker = new Worker(
   QUEUE_NAME,
   async (job) => {
     const { message } = job.data;
+
     console.log(
       `⚙️  Processing job ${job.id} (attempt ${job.attemptsMade + 1})`,
     );

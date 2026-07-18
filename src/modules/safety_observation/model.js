@@ -6,6 +6,11 @@ const safetyObservationSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
+  messageId: {
+    type: String,
+    unique: true,
+    // required: true,
+  },
   observedBy: {
     type: String,
     required: true,
@@ -43,10 +48,23 @@ const safetyObservationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Open", "In Progress", "Resolved", "Closed"],
+    enum: ["Open", "In Progress", "Resolved", "Closed", "Reopened"],
     default: "Open",
   },
   attachments: [String],
+  rectificationDate: {
+    type: Date,
+    default: null,
+  },
+  actionTakenBy: {
+    type: String,
+  },
+  actionStatment: {
+    type: String,
+  },
+  flagStatement: {
+    type: String,
+  },
   observationDate: {
     type: Date,
     default: Date.now,
