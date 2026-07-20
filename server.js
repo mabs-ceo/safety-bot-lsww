@@ -2,7 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
 const connectDB = require("./src/config/DB.config");
-const { whatsappQueue } = require("./src/queues/whatsapp.queue");
+
 const cors = require("cors");
 const {
   replyToGroup,
@@ -13,7 +13,6 @@ const KEYWORDS = ["finding:", "close$", "view$", "no$"];
 // Starts the BullMQ worker in this same process — it listens on the
 // "whatsapp-messages" queue and calls processWhatsappMessage() for each
 // job (finding: / close: / view$ logic all lives there now, not here).
-require("./src/workers/whatsapp.worker");
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
