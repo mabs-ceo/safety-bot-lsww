@@ -180,11 +180,39 @@ async function processWhatsappMessage(message) {
     const textToSend = isOpenRequest ? "open" : month;
     const observations = await getSafetyObservationsummary(textToSend);
 
-    await replyToGroup(
-      observations || `No safety observations found for ${textToSend}.`,
-    );
+    // await replyToGroup(
+    //   observations || `No safety observations found for ${textToSend}.`,
+    // );
+    if (!observations || observations.length === 0) {
+      await replyToGroup(`No safety observations found for ${textToSend}.`);
+      return;
+    }
+    await replyToGroup(observations);
+    // await replyToUser(
+    //   message.from,
+    //   observations || `No safety observations found for ${textToSend}.`,
+    // );
     return;
   }
 }
-
+async function replyToUser(to, text) {
+  try {
+    await axios.post(
+      `https://gate.whapi.cloud/messages/text`,
+      { to, body: text },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    console.log("✅ DM sent");
+  } catch (error) {
+    console.error("❌ DM failed:", error.response?.data || error.message);
+    // Re-throw so BullMQ marks the job as failed and retries it.
+    // Without this, a failed reply would be silently swallowed.
+    throw error;
+  }
+}
 module.exports = { replyToGroup, processWhatsappMessage };
