@@ -4,7 +4,10 @@ dotenv.config();
 const connectDB = require("./src/config/DB.config");
 const { whatsappQueue } = require("./src/queues/whatsapp.queue");
 const cors = require("cors");
-const { replyToGroup } = require("./src/services/whatsapp.service");
+const {
+  replyToGroup,
+  processWhatsappMessage,
+} = require("./src/services/whatsapp.service");
 const ALLOWED_GROUP_ID = process.env.GROUP_ID;
 const KEYWORDS = ["finding:", "close$", "view$", "no$"];
 // Starts the BullMQ worker in this same process — it listens on the
@@ -97,7 +100,8 @@ app.post("/webhook", async (req, res) => {
     console.log("not skipping");
 
     jobs.push(
-      whatsappQueue.add("process-message", { message }, { jobId: message.id }),
+      // whatsappQueue.add("process-message", { message }, { jobId: message.id }),
+      await processWhatsappMessage({ message }),
     );
   }
 
