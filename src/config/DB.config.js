@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 5000;
 const ATLASDB_URI = process.env.ATLASDB_URI;
 

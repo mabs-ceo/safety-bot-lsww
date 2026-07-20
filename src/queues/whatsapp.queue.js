@@ -10,7 +10,7 @@ const whatsappQueue = new Queue(QUEUE_NAME, {
   defaultJobOptions: {
     // If processing a message fails (e.g. Mongo blip, whapi.cloud 500),
     // retry up to 3 times with exponential backoff instead of losing the job.
-    attempts: 3,
+    attempts: 1,
     backoff: {
       type: "exponential",
       delay: 2000, // 2s, 4s, 8s
