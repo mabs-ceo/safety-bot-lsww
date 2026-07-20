@@ -33,14 +33,6 @@ async function replyToGroup(text) {
   }
 }
 
-/**
- * Core message-handling logic — this is exactly what used to live inline
- * inside app.post("/webhook", ...). It's now a plain function that the
- * BullMQ worker calls per job, decoupled from Express/req/res entirely.
- *
- * @param {object} message - a single WhatsApp message object from whapi.cloud
- * @param {string} allowedGroupId - the group ID the bot listens to
- */
 async function processWhatsappMessage(message) {
   console.log("✅ Processing message:", message);
   const userText = message.text?.body || message.image?.caption;
@@ -95,10 +87,6 @@ async function processWhatsappMessage(message) {
       `✅ Safety observation ID for finding "${findingsText}": ${safetyObservationFinding}`,
     );
 
-    // Whatever this function returns becomes the job's "return value" in
-    // BullMQ — retrievable later via job.returnvalue. This is what the
-    // frontend polling endpoint below will read, instead of a DB query
-    // or a socket emit.
     return {
       type: "new-safety-observation",
       id: safetyObservationFinding,
@@ -173,9 +161,6 @@ async function processWhatsappMessage(message) {
       "dec",
     ];
 
-    // "view$ open" bypasses the month check entirely and asks the
-    // controller for every observation that's still open, regardless
-    // of when it was created.
     const isOpenRequest = userText.toLowerCase().includes("open");
 
     let month = userText.split("$")[1].trim();

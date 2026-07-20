@@ -1,4 +1,5 @@
 const express = require("express");
+const helmet = require("helmet");
 const dotenv = require("dotenv");
 dotenv.config();
 const connectDB = require("./src/config/DB.config");
@@ -23,18 +24,31 @@ const corsOptions = [
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   },
-  // {
-  //   origin: "http://localhost:3000",
-  //   methods: ["GET", "POST"],
-  //   allowedHeaders: ["Content-Type", "Authorization"],
-  //   credentials: true,
-  // },
+  {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
+  {
+    origin: "https://feeble-resume-android.ngrok-free.dev",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
+  {
+    origin: "https://safety-bot-lsww.onrender.com",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
 ];
 const app = express();
 app.use(cors(corsOptions));
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(helmet());
 
 app.get("/", async (req, res) => {
   try {
@@ -50,10 +64,9 @@ app.post("/webhook", async (req, res) => {
 
   const messages = req.body?.messages ?? [];
   if (messages.length && messages[0].chat_id !== ALLOWED_GROUP_ID) {
-    console.log(`⏭️ Skipped ${messages[0].id} from ${messages[0].chat_id}`);
     return res.sendStatus(200);
   }
-  console.log(`📥 Received ${messages.length} messages: `, messages);
+  console.log(`📥 Received ${messages.length} messages: `);
   if (!messages.length) {
     return res.sendStatus(200);
   }
@@ -61,8 +74,6 @@ app.post("/webhook", async (req, res) => {
   const jobs = [];
 
   for (const message of messages) {
-    console.log(`📥 Received ${message.id} from ${message.chat_id}`);
-
     if (message.chat_id !== ALLOWED_GROUP_ID) continue;
 
     let text = message.text?.body || message.image?.caption;
@@ -75,7 +86,7 @@ app.post("/webhook", async (req, res) => {
 
     const lower = text.toLowerCase();
     const authorizedNumbers = process.env.AUTHORIZED_NUMBERS.split(",");
-    console.log("✅ Authorized numbers:", authorizedNumbers);
+
     if (lower.includes("view$") && !authorizedNumbers.includes(message.from)) {
       await replyToGroup(
         `❌ You are not authorized to view safety observations summary.`,
@@ -98,19 +109,15 @@ app.post("/webhook", async (req, res) => {
 
     console.log("not skipping");
 
-    jobs.push(
-      // whatsappQueue.add("process-message", { message }, { jobId: message.id }),
-      await processWhatsappMessage({ message }),
-    );
+    jobs.push(message);
   }
 
-  try {
-    console.log(
-      `📥 Enqueuing ${jobs.length} jobs... called BULLMQ using UPSTASH`,
-    );
-    await Promise.all(jobs);
-  } catch (err) {
-    console.error("Failed to enqueue jobs:", err);
+  for (const job of jobs) {
+    try {
+      await processWhatsappMessage(job);
+    } catch (error) {
+      console.error("❌ Failed to process message:", error);
+    }
   }
 
   res.sendStatus(200);
