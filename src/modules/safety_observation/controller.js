@@ -10,8 +10,12 @@ async function safetyFindingsController(props) {
   });
   const number = todateCount + 1 < 10 ? `0${todateCount + 1}` : todateCount + 1;
 
-  const now = new Date();
-  const readable = now.toISOString().slice(0, 10).replace(/-/g, ""); // 20260628
+  const now = new Date(); // Get the current date and time
+  const month = now.getMonth() + 1; // Months are zero-based, so add 1
+  const day = now.getDate();
+  const newFormate = `${month > 9 ? month : `0${month}`}${day > 9 ? day : `0${day}`}`;
+
+  const readable = newFormate.replace(/-/g, ""); // 0628
   const observationId = `${readable}-${number}`;
 
   console.log("observationId", observationId);
@@ -92,6 +96,28 @@ async function closeAllSafetyObservationsController() {
     throw error;
   }
 }
+async function findingsCurrentStatus(x) {
+  try {
+    const result = await SafetyObservationModel.findOne({
+      observationId: x,
+    });
+    if (!result) {
+      throw new Error("Observation not found");
+    }
+    if (result.status === "Closed") {
+      return "Closed";
+    }
+    if (result.status === "Reopened") {
+      return "Reopened";
+    }
+    if (result.status === "Open") {
+      return "Open";
+    }
+  } catch (error) {
+    console.error("Error closing all observations:", error);
+    throw error;
+  }
+}
 
 async function getSafetyObservationsummary(text) {
   const month = text.toLowerCase() !== "open" && text.toLowerCase();
@@ -151,4 +177,5 @@ module.exports = {
   getSafetyObservationsummary,
   closeAllSafetyObservationsController,
   reopenSafetyObservationController,
+  findingsCurrentStatus,
 };

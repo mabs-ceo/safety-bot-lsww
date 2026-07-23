@@ -4,6 +4,7 @@ const {
   getSafetyObservationsummary,
   closeSafetyObservationController,
   closeAllSafetyObservationsController,
+  findingsCurrentStatus,
   reopenSafetyObservationController,
 } = require("../modules/safety_observation/controller");
 
@@ -12,11 +13,35 @@ const groupId = process.env.GROUP_ID;
 /**
  * Sends a text reply back to the WhatsApp group via whapi.cloud.
  */
-async function replyToGroup(text) {
+// async function replyToGroup(text) {
+//   try {
+//     await axios.post(
+//       `https://gate.whapi.cloud/messages/text`,
+//       { to: groupId, body: text },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           "Content-Type": "application/json",
+//         },
+//       },
+//     );
+//     console.log("✅ Reply sent");
+//   } catch (error) {
+//     console.error("❌ Reply failed:", error.response?.data || error.message);
+//     // Re-throw so BullMQ marks the job as failed and retries it.
+//     // Without this, a failed reply would be silently swallowed.
+//     throw error;
+//   }
+// }
+async function replyToGroup(text, quotedMessageId) {
   try {
     await axios.post(
       `https://gate.whapi.cloud/messages/text`,
-      { to: groupId, body: text },
+      {
+        to: groupId,
+        body: text,
+        quoted: quotedMessageId, // the id of the message you're replying to
+      },
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -27,12 +52,9 @@ async function replyToGroup(text) {
     console.log("✅ Reply sent");
   } catch (error) {
     console.error("❌ Reply failed:", error.response?.data || error.message);
-    // Re-throw so BullMQ marks the job as failed and retries it.
-    // Without this, a failed reply would be silently swallowed.
     throw error;
   }
 }
-
 async function processWhatsappMessage(message) {
   console.log("✅ Processing message:", message);
   const userText = message.text?.body || message.image?.caption;
@@ -67,8 +89,8 @@ async function processWhatsappMessage(message) {
     const id = message.id;
     if (!findingsText || !party || !location) {
       await replyToGroup(
-        allowedGroupId,
         `❌ Wrong format. Please use:\n\nfinding: [description]\nparty: [party]\nlocation: [location]`,
+        id,
       );
       return;
     }
@@ -85,6 +107,7 @@ async function processWhatsappMessage(message) {
 
     await replyToGroup(
       `✅ Safety observation ID for finding "${findingsText}": ${safetyObservationFinding}`,
+      id,
     );
 
     return {
@@ -108,9 +131,19 @@ async function processWhatsappMessage(message) {
     let closedObservation;
     if (closeAll) {
       closedObservation = await closeAllSafetyObservationsController();
-
-      await replyToGroup(allowedGroupId, `✅ Closed all safety observations.`);
+      console.log("✅ Closed all safety observations:", closedObservation);
+      await replyToGroup(
+        `✅ Closed all safety observations.`,
+        closedObservation.messageId,
+      );
     } else {
+      const currentStatus = await findingsCurrentStatus(observationId);
+      if (currentStatus && currentStatus === "Closed") {
+        return await replyToGroup(
+          `❌ Safety observation ID: ${observationId} is already closed.`,
+          message.id,
+        );
+      }
       closedObservation = await closeSafetyObservationController(
         observationId,
         actionTakenBy,
@@ -119,6 +152,7 @@ async function processWhatsappMessage(message) {
       console.log("✅ Closed safety observation:", closedObservation);
       await replyToGroup(
         `✅ Closed safety observation ID: ${closedObservation.observationId} by ${closedObservation.actionTakenBy}. Action statement: ${closedObservation.actionStatment || "No action statement provided"} `,
+        closedObservation.messageId,
       );
     }
     return;
@@ -173,6 +207,7 @@ async function processWhatsappMessage(message) {
     if (!isOpenRequest && !months.includes(month.toLowerCase())) {
       await replyToGroup(
         `❌ Invalid month. Please use one of the following: ${months.join(", ")}`,
+        message.id,
       );
       return;
     }
@@ -187,7 +222,7 @@ async function processWhatsappMessage(message) {
       await replyToGroup(`No safety observations found for ${textToSend}.`);
       return;
     }
-    await replyToGroup(observations);
+    await replyToGroup(observations, message.id);
     // await replyToUser(
     //   message.from,
     //   observations || `No safety observations found for ${textToSend}.`,

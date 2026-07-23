@@ -135,6 +135,7 @@ app.post("/webhook", async (req, res) => {
     if (lower.includes("view$") && !AUTHORIZED_NUMBERS.includes(message.from)) {
       await replyToGroup(
         `❌ You are not authorized to view safety observations summary.`,
+        message.id,
       );
       return res.sendStatus(200);
     }
@@ -142,6 +143,7 @@ app.post("/webhook", async (req, res) => {
     if (lower.includes("no$") && message.from !== SAFETY_NUM) {
       await replyToGroup(
         `❌ You are not authorized to reopen safety observations.`,
+        message.id,
       );
       return res.sendStatus(200);
     }
