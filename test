@@ -1,0 +1,33 @@
+* [33m70c90e4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mcopilot/fix-failing-github-actions-job[m[33m)[m test
+*   [33me2e4db4[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #1 from mabs-ceo/copilot/fix-failing-github-actions-job
+[32m|[m[33m\[m  
+[32m|[m * [33m8e414e6[m[33m ([m[1;31morigin/copilot/fix-failing-github-actions-job[m[33m)[m fix: add missing backslash continuation in daily-trigger workflow curl command
+[32m|[m * [33m1037a6a[m Initial plan
+[32m|[m[32m/[m  
+[32m|[m * [33m696acfa[m[33m ([m[1;32mmain[m[33m)[m added daily trigger 3
+[32m|[m[32m/[m  
+* [33m54c8d04[m added daily trigger 2
+* [33me6988a6[m added daily trigger:
+* [33m9a4e345[m added some guardrails and reply to the findings
+* [33mc0f8114[m production code
+* [33mf9650e0[m whats app bot tested okay
+* [33ma21d619[m removed bullmq code from project
+* [33m8afbe59[m removed bullmq from project
+* [33m9ec8518[m chnage upstash account to backerDev
+* [33mb56d12c[m added features
+* [33m3dd98e1[m error in image
+* [33m1e7efd3[m changes made to keyword
+* [33me2dabc7[m changed logic error skipping
+* [33m1e5abcd[m changed logic error
+* [33mefed036[m changed logic
+* [33m57b05ca[m working
+* [33m9683cd3[m mongoose error 4
+* [33m8419138[m mongoose error 3
+* [33mb9bfa38[m mongoose error 2
+* [33md1d9ecc[m mongoose error 1
+* [33ma15738f[m mongoose error
+* [33m983c9bb[m added cors and baseUrl
+*   [33md8ed2f8[m Merge remote changes
+[35m|[m[36m\[m  
+[35m|[m * [33m157002b[m Initial commit
+* [33mc15da21[m Initial commit
