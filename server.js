@@ -100,7 +100,17 @@ app.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch groups" });
   }
 });
+app.post("/api/daily", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
 
+  if (authHeader !== expected) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  await dailyWhatsappMessage();
+  console.log("✅ Daily summary sent successfully");
+  res.json({ success: true });
+});
 app.post("/webhook", async (req, res) => {
   console.log("✅ Webhook called");
 
@@ -168,17 +178,6 @@ app.post("/webhook", async (req, res) => {
   }
 
   res.sendStatus(200);
-});
-app.post("/api/daily", async (req, res) => {
-  const authHeader = req.headers["authorization"];
-  const expected = `Bearer ${process.env.CRON_SECRET}`;
-
-  if (authHeader !== expected) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  await dailyWhatsappMessage();
-  console.log("✅ Daily summary sent successfully");
-  res.json({ success: true });
 });
 
 // ---------------------------------------------------------------------------
