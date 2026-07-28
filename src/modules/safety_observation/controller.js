@@ -119,7 +119,7 @@ async function findingsCurrentStatus(x) {
   }
 }
 
-async function getSafetyObservationsummary(text) {
+async function getSafetyObservationsummary(text, daily = false) {
   const month = text.toLowerCase() !== "open" && text.toLowerCase();
   console.log("Fetching safety observations summary...");
   const monthMap = {
@@ -145,7 +145,7 @@ async function getSafetyObservationsummary(text) {
       if (!openFindings || openFindings.length === 0) {
         return "No open observations found";
       }
-      const summary = formatSummary(openFindings);
+      const summary = formatSummary(openFindings, daily);
       return summary;
     }
 

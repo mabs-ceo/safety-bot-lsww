@@ -231,7 +231,8 @@ async function processWhatsappMessage(message) {
   }
 }
 async function dailyWhatsappMessage() {
-  const observations = await getSafetyObservationsummary("open");
+  const daily = true;
+  const observations = await getSafetyObservationsummary("open", daily);
 
   if (!observations || observations.length === 0) {
     await replyToGroup(

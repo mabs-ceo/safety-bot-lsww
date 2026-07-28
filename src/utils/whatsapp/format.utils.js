@@ -1,9 +1,20 @@
-function formatSummary(observations) {
+function formatSummary(observations, daily = false) {
   const open = observations.filter((o) => o.status === "Open");
   const reopened = observations.filter((o) => o.status === "Reopened");
   const closed = observations.filter((o) => o.status === "Closed");
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleString("en-GB", {
+    timeZone: "Asia/Singapore",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour12: true,
+    hour: "numeric",
+    minute: "numeric",
+  });
+  const header = `🚧 Open Safety Findings Requiring Follow-up | ${formattedDate}`;
+  let msg = daily ? ` *${header}*\n` : `📊 *OBSERVATION SUMMARY*\n`;
 
-  let msg = `📊 *OBSERVATION SUMMARY*\n`;
   msg += `━━━━━━━━━━━━━━━━━━━━\n`;
   msg += `🔴 *Open:* ${open.length}   🟡 *Reopened:* ${reopened.length}   ✅ *Closed:* ${closed.length}\n`;
   msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
