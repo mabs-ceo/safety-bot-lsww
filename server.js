@@ -8,6 +8,7 @@ const cors = require("cors");
 const {
   replyToGroup,
   processWhatsappMessage,
+  dailyWhatsappMessage,
 } = require("./src/services/whatsapp.service");
 
 // ---------------------------------------------------------------------------
@@ -167,6 +168,17 @@ app.post("/webhook", async (req, res) => {
   }
 
   res.sendStatus(200);
+});
+app.post("/api/daily", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+
+  if (authHeader !== expected) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  await dailyWhatsappMessage();
+  console.log("✅ Daily summary sent successfully");
+  res.json({ success: true });
 });
 
 // ---------------------------------------------------------------------------

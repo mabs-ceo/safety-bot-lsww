@@ -1,0 +1,15 @@
+name: Daily Trigger
+
+on:
+  schedule:
+    - cron: "30 0 * * *" # 00:00 UTC = 08:00 SGT, for demo send in five minutes from now
+  workflow_dispatch: # lets you run it manually too, for testing
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Render endpoint
+        run: |
+          curl -f -X POST https://safety-bot-lsww.onrender.com/api/daily \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

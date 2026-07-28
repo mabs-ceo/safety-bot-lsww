@@ -40,7 +40,7 @@ async function replyToGroup(text, quotedMessageId) {
       {
         to: groupId,
         body: text,
-        quoted: quotedMessageId, // the id of the message you're replying to
+        quoted: quotedMessageId || null, // the id of the message you're replying to
       },
       {
         headers: {
@@ -230,6 +230,19 @@ async function processWhatsappMessage(message) {
     return;
   }
 }
+async function dailyWhatsappMessage() {
+  const observations = await getSafetyObservationsummary("open");
+
+  if (!observations || observations.length === 0) {
+    await replyToGroup(
+      `All safety observations are closed. No open safety observations found.`,
+    );
+    return;
+  }
+  await replyToGroup(observations);
+
+  return;
+}
 async function replyToUser(to, text) {
   try {
     await axios.post(
@@ -250,4 +263,4 @@ async function replyToUser(to, text) {
     throw error;
   }
 }
-module.exports = { replyToGroup, processWhatsappMessage };
+module.exports = { replyToGroup, processWhatsappMessage, dailyWhatsappMessage };
