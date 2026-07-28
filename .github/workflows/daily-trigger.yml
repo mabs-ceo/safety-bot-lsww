@@ -12,6 +12,6 @@ jobs:
       - name: Call Render endpoint
         run: |
           curl -f -X POST https://safety-bot-lsww.onrender.com/api/daily \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d "{}"
