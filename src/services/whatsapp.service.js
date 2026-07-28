@@ -34,21 +34,21 @@ const groupId = process.env.GROUP_ID;
 //   }
 // }
 async function replyToGroup(text, quotedMessageId) {
+  const payload = {
+    to: groupId,
+    body: text,
+  };
+
+  if (quotedMessageId) {
+    payload.quoted = quotedMessageId;
+  }
   try {
-    await axios.post(
-      `https://gate.whapi.cloud/messages/text`,
-      {
-        to: groupId,
-        body: text,
-        quoted: quotedMessageId || null, // the id of the message you're replying to
+    await axios.post(`https://gate.whapi.cloud/messages/text`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    });
     console.log("✅ Reply sent");
   } catch (error) {
     console.error("❌ Reply failed:", error.response?.data || error.message);
