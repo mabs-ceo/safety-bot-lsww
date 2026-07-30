@@ -173,6 +173,7 @@ async function processWhatsappMessage(message) {
     console.log("✅ Reopened safety observation:", reopenedObservation);
     await replyToGroup(
       `✅ Reopened safety observation ID: ${reopenedObservation.observationId}. Flag statement: ${reopenedObservation.flagStatement || "No flag statement provided"} `,
+      reopenedObservation.messageId,
     );
 
     return;

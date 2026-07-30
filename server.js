@@ -119,7 +119,19 @@ app.post("/webhook", async (req, res) => {
     return res.sendStatus(429);
   }
 
-  const messages = req.body?.messages ?? [];
+  let messages = req.body?.messages ?? [];
+  if (messages?.[0]?.type === "video") {
+    console.log("✅ Video message received");
+    messages = messages.map((msg) => {
+      if (msg.type === "video") {
+        return {
+          ...msg,
+          text: { body: msg.video?.caption || "" },
+        };
+      }
+      return msg;
+    });
+  }
   if (messages.length && messages[0].chat_id !== ALLOWED_GROUP_ID) {
     return res.sendStatus(200);
   }
@@ -133,8 +145,16 @@ app.post("/webhook", async (req, res) => {
   for (const message of messages) {
     if (message.chat_id !== ALLOWED_GROUP_ID) continue;
 
-    let text = message.text?.body || message.image?.caption;
+    let text =
+      message.text?.body ||
+      message.image?.caption ||
+      message.video?.caption ||
+      message.document?.caption;
     const context = message.context?.quoted_id || null;
+
+    console.log(
+      `✅ Processing message ${message.id}: ${message.video?.caption}`,
+    );
     if (context) {
       console.log(`✅ Quoted message context: ${context}`);
       let subKeyWOrd = "";
