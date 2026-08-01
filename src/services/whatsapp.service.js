@@ -9,7 +9,9 @@ const {
 } = require("../modules/safety_observation/controller");
 
 const token = process.env.WHATSAPI_TOKEN;
-const groupId = process.env.GROUP_ID;
+// const groupId = process.env.GROUP_ID;
+const groupTmcSafety = process.env.GROUP_TMC_SAFETY;
+const groupLswwSafety = process.env.GROUP_LSWW_SAFETY;
 /**
  * Sends a text reply back to the WhatsApp group via whapi.cloud.
  */
@@ -34,16 +36,41 @@ const groupId = process.env.GROUP_ID;
 //   }
 // }
 async function replyToGroup(text, quotedMessageId) {
-  const payload = {
-    to: groupId,
+  const payloadTMC = {
+    to: groupTmcSafety,
     body: text,
   };
 
   if (quotedMessageId) {
-    payload.quoted = quotedMessageId;
+    payloadTMC.quoted = quotedMessageId;
   }
   try {
-    await axios.post(`https://gate.whapi.cloud/messages/text`, payload, {
+    await axios.post(`https://gate.whapi.cloud/messages/text`, payloadTMC, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ Reply sent");
+  } catch (error) {
+    console.error("❌ Reply failed:", error.response?.data || error.message);
+    throw error;
+  }
+}
+async function replyToLSWWGroup(text, quotedMessageId) {
+  // const testId = "120363377757725792@g.us";
+
+  const payloadLSWW = {
+    to: groupLswwSafety,
+    body: text,
+  };
+
+  if (quotedMessageId) {
+    payloadLSWW.quoted = quotedMessageId;
+  }
+  try {
+    await axios.post(`https://gate.whapi.cloud/messages/text`, payloadLSWW, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -80,14 +107,28 @@ async function processWhatsappMessage(message) {
     const lines = userText.split("\n");
 
     // Safe parser - handles colons in values like "9:00am"
-    const getValue = (line) => line.split(":").slice(1).join(":").trim();
-
+    // const getValue = (line) => line.split(":").slice(1).join(":").trim();
+    const getValue = (line) =>
+      line ? line.split(":").slice(1).join(":").trim() : "";
     const findingsText = getValue(lines[0]) || "unknown";
     const party = getValue(lines[1]) || "unknown";
     const location = getValue(lines[2]) || "unknown";
+
+    const rawFindings = getValue(lines[0]);
+    const rawParty = getValue(lines[1]);
+    const rawLocation = getValue(lines[2]);
+
     const observedBy = message.from;
     const id = message.id;
-    if (!findingsText || !party || !location) {
+    // if (!findingsText || !party || !location) {
+    //   await replyToGroup(
+    //     `❌ Wrong format. Please use:\n\nfinding: [description]\nparty: [party]\nlocation: [location]`,
+    //     id,
+    //   );
+    //   return;
+    // }
+
+    if (!rawFindings || !rawParty || !rawLocation) {
       await replyToGroup(
         `❌ Wrong format. Please use:\n\nfinding: [description]\nparty: [party]\nlocation: [location]`,
         id,
@@ -108,6 +149,10 @@ async function processWhatsappMessage(message) {
     await replyToGroup(
       `✅ Safety observation ID for finding "${findingsText}": ${safetyObservationFinding}`,
       id,
+    );
+
+    await replyToLSWWGroup(
+      `✅ Safety Observation with id :${safetyObservationFinding}. If you are responsible for this observation, please provide the Safety Officer with an update on the corrective actions taken.Upon verification, all safety observations will be officially closed in the TMC Safety group .\n ${findingsText} \n Party: ${party} \n Location: ${location}`,
     );
 
     return {
@@ -265,4 +310,9 @@ async function replyToUser(to, text) {
     throw error;
   }
 }
-module.exports = { replyToGroup, processWhatsappMessage, dailyWhatsappMessage };
+module.exports = {
+  replyToGroup,
+  replyToLSWWGroup,
+  processWhatsappMessage,
+  dailyWhatsappMessage,
+};

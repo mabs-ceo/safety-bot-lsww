@@ -23,9 +23,9 @@ if (missingEnvVars.length) {
   process.exit(1);
 }
 
-const ALLOWED_GROUP_ID = process.env.GROUP_ID;
+const ALLOWED_GROUP_ID = process.env.GROUP_TMC_SAFETY;
 const AUTHORIZED_NUMBERS = process.env.AUTHORIZED_NUMBERS.split(",");
-const SAFETY_NUM = process.env.SAFETY_NUM;
+const SAFETY_NUM = process.env.SAFETY_NUM.split(",");
 const KEYWORDS = ["finding:", "close$", "view$", "no$"];
 
 // job (finding: / close: / view$ logic all lives there now, not here).
@@ -120,6 +120,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   let messages = req.body?.messages ?? [];
+  console.log(`📥 Received ${messages.length} messages: `, messages);
   if (messages?.[0]?.type === "video") {
     console.log("✅ Video message received");
     messages = messages.map((msg) => {
@@ -135,7 +136,7 @@ app.post("/webhook", async (req, res) => {
   if (messages.length && messages[0].chat_id !== ALLOWED_GROUP_ID) {
     return res.sendStatus(200);
   }
-  console.log(`📥 Received ${messages.length} messages: `);
+  // console.log(`📥 Received ${messages.length} messages: `);
   if (!messages.length) {
     return res.sendStatus(200);
   }
@@ -171,7 +172,7 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    if (lower.includes("no$") && message.from !== SAFETY_NUM) {
+    if (lower.includes("no$") && !SAFETY_NUM.includes(message.from)) {
       await replyToGroup(
         `❌ You are not authorized to reopen safety observations.`,
         message.id,
