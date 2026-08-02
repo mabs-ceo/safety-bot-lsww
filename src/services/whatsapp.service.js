@@ -58,7 +58,8 @@ async function replyToGroup(text, quotedMessageId) {
     throw error;
   }
 }
-async function replyToLSWWGroup(text, quotedMessageId) {
+async function replyToLSWWGroup(text, quotedMessageId, isAuthorized = false) {
+  // replyToLSWWGroup(observations, message.id, isAuthorized);
   // const testId = "120363377757725792@g.us";
 
   const payloadLSWW = {
@@ -82,7 +83,32 @@ async function replyToLSWWGroup(text, quotedMessageId) {
     throw error;
   }
 }
-async function processWhatsappMessage(message) {
+
+async function forwardToGroup(messageId) {
+  const payload = {
+    to: groupLswwSafety,
+    force: true,
+  };
+
+  try {
+    await axios.post(
+      `https://gate.whapi.cloud/messages/${messageId}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    console.log("✅ Image forwarded");
+  } catch (error) {
+    console.error("❌ Forward failed:", error.response?.data || error.message);
+    throw error;
+  }
+}
+async function processWhatsappMessage(message, isAuthorized = false) {
   console.log("✅ Processing message:", message);
   const userText = message.text?.body || message.image?.caption;
 
@@ -103,9 +129,12 @@ async function processWhatsappMessage(message) {
   console.log("✅ Text:", userText);
 
   // --- "finding:" → create a new safety observation ---
-  if (userText.toLowerCase().includes("finding:")) {
+  if (
+    userText.toLowerCase().includes("finding:") &&
+    message.chat_id === groupTmcSafety
+  ) {
     const lines = userText.split("\n");
-
+    console.log("✅ Lines");
     // Safe parser - handles colons in values like "9:00am"
     // const getValue = (line) => line.split(":").slice(1).join(":").trim();
     const getValue = (line) =>
@@ -113,7 +142,7 @@ async function processWhatsappMessage(message) {
     const findingsText = getValue(lines[0]) || "unknown";
     const party = getValue(lines[1]) || "unknown";
     const location = getValue(lines[2]) || "unknown";
-
+    console.log("✅ Getvalue");
     const rawFindings = getValue(lines[0]);
     const rawParty = getValue(lines[1]);
     const rawLocation = getValue(lines[2]);
@@ -135,7 +164,7 @@ async function processWhatsappMessage(message) {
       );
       return;
     }
-
+    console.log("✅ Raw values");
     console.log("✅ Findings:", { findingsText, party, location });
 
     const safetyObservationFinding = await safetyFindingsController({
@@ -151,9 +180,11 @@ async function processWhatsappMessage(message) {
       id,
     );
 
-    await replyToLSWWGroup(
-      `✅ Safety Observation with id :${safetyObservationFinding}. If you are responsible for this observation, please provide the Safety Officer with an update on the corrective actions taken.Upon verification, all safety observations will be officially closed in the TMC Safety group .\n ${findingsText} \n Party: ${party} \n Location: ${location}`,
-    );
+    // await replyToLSWWGroup(
+    //   `✅ Safety Observation with id :${safetyObservationFinding}. If you are responsible for this observation, please provide the Safety Officer with an update on the corrective actions taken.Upon verification, all safety observations will be officially closed in the TMC Safety group .\n ${findingsText} \n Party: ${party} \n Location: ${location}`,
+    // );
+
+    await forwardToGroup(message.id);
 
     return {
       type: "new-safety-observation",
@@ -261,18 +292,89 @@ async function processWhatsappMessage(message) {
     const textToSend = isOpenRequest ? "open" : month;
     const observations = await getSafetyObservationsummary(textToSend);
 
-    // await replyToGroup(
-    //   observations || `No safety observations found for ${textToSend}.`,
-    // );
     if (!observations || observations.length === 0) {
       await replyToGroup(`No safety observations found for ${textToSend}.`);
       return;
     }
+    if (isAuthorized && groupLswwSafety) {
+      await replyToLSWWGroup(observations, message.id, isAuthorized);
+
+      return;
+    }
+
     await replyToGroup(observations, message.id);
-    // await replyToUser(
-    //   message.from,
-    //   observations || `No safety observations found for ${textToSend}.`,
-    // );
+
+    return;
+  }
+}
+async function processWhatsappMessageToPUB(message, isAuthorized = false) {
+  console.log("✅ Processing message:", message);
+  const userText = message.text?.body || message.image?.caption;
+
+  // Admin override command
+  if (message.from_me && userText === "!listen") {
+    console.log("✅ Admin command: listening mode on");
+    await replyToGroup("✅ I am now listening.");
+    return;
+  }
+
+  if (!userText) return;
+
+  console.log("✅ Received message:", message);
+  console.log(
+    "✅ Message from:",
+    message.from === "6588062313" ? "Abu" : message.from,
+  );
+  console.log("✅ Text:", userText);
+
+  if (userText.toLowerCase().includes("view$")) {
+    const months = [
+      "jan",
+      "feb",
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct",
+      "nov",
+      "dec",
+    ];
+
+    const isOpenRequest = userText.toLowerCase().includes("open");
+
+    let month = userText.split("$")[1].trim();
+    if (!month) {
+      month = new Date()
+        .toLocaleString("default", { month: "short" })
+        .toLowerCase();
+    }
+
+    if (!isOpenRequest && !months.includes(month.toLowerCase())) {
+      await replyToGroup(
+        `❌ Invalid month. Please use one of the following: ${months.join(", ")}`,
+        message.id,
+      );
+      return;
+    }
+
+    const textToSend = isOpenRequest ? "open" : month;
+    const observations = await getSafetyObservationsummary(textToSend);
+
+    if (!observations || observations.length === 0) {
+      await replyToGroup(`No safety observations found for ${textToSend}.`);
+      return;
+    }
+    if (isAuthorized && groupLswwSafety) {
+      await replyToLSWWGroup(observations, message.id, isAuthorized);
+
+      return;
+    }
+
+    await replyToGroup(observations, message.id);
+
     return;
   }
 }
@@ -305,8 +407,7 @@ async function replyToUser(to, text) {
     console.log("✅ DM sent");
   } catch (error) {
     console.error("❌ DM failed:", error.response?.data || error.message);
-    // Re-throw so BullMQ marks the job as failed and retries it.
-    // Without this, a failed reply would be silently swallowed.
+
     throw error;
   }
 }
@@ -314,5 +415,6 @@ module.exports = {
   replyToGroup,
   replyToLSWWGroup,
   processWhatsappMessage,
+  processWhatsappMessageToPUB,
   dailyWhatsappMessage,
 };

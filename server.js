@@ -8,6 +8,7 @@ const cors = require("cors");
 const {
   replyToGroup,
   processWhatsappMessage,
+  processWhatsappMessageToPUB,
   dailyWhatsappMessage,
 } = require("./src/services/whatsapp.service");
 
@@ -24,6 +25,7 @@ if (missingEnvVars.length) {
 }
 
 const ALLOWED_GROUP_ID = process.env.GROUP_TMC_SAFETY;
+const ALLOWED_GROUP_ID_2 = process.env.GROUP_LSWW_SAFETY;
 const AUTHORIZED_NUMBERS = process.env.AUTHORIZED_NUMBERS.split(",");
 const SAFETY_NUM = process.env.SAFETY_NUM.split(",");
 const KEYWORDS = ["finding:", "close$", "view$", "no$"];
@@ -120,7 +122,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   let messages = req.body?.messages ?? [];
-  console.log(`📥 Received ${messages.length} messages: `, messages);
+  // console.log(`📥 Received ${messages.length} messages: `, messages);
   if (messages?.[0]?.type === "video") {
     console.log("✅ Video message received");
     messages = messages.map((msg) => {
@@ -133,6 +135,18 @@ app.post("/webhook", async (req, res) => {
       return msg;
     });
   }
+
+  const isAuthorized =
+    AUTHORIZED_NUMBERS.includes(messages[0].from) &&
+    messages[0].chat_id === ALLOWED_GROUP_ID_2;
+
+  if (isAuthorized) {
+    await processWhatsappMessageToPUB(messages[0], isAuthorized);
+
+    console.log(`✅ Authorized number: ${messages[0].from}`);
+    return res.sendStatus(200);
+  }
+
   if (messages.length && messages[0].chat_id !== ALLOWED_GROUP_ID) {
     return res.sendStatus(200);
   }
@@ -164,7 +178,8 @@ app.post("/webhook", async (req, res) => {
 
     const lower = text.toLowerCase();
 
-    if (lower.includes("view$") && !AUTHORIZED_NUMBERS.includes(message.from)) {
+    if (lower.includes("view$") && !SAFETY_NUM.includes(message.from)) {
+      console.log(`⏭️ Skipped ${message.id} due to unauthorized view request`);
       await replyToGroup(
         `❌ You are not authorized to view safety observations summary.`,
         message.id,
