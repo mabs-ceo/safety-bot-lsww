@@ -32,12 +32,10 @@ const safetyObservationSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: ["Near Miss", "Hazard", "Unsafe Act", "Unsafe Condition"],
-    required: true,
   },
   severity: {
     type: String,
     enum: ["Low", "Medium", "High", "Critical"],
-    required: true,
   },
   description: {
     type: String,
