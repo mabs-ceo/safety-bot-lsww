@@ -135,6 +135,10 @@ app.post("/webhook", async (req, res) => {
       return msg;
     });
   }
+  // console.log(`📥 Received ${messages.length} messages: `);
+  if (!messages.length) {
+    return res.sendStatus(200);
+  }
 
   const isAuthorized =
     AUTHORIZED_NUMBERS.includes(messages[0].from) &&
@@ -148,10 +152,6 @@ app.post("/webhook", async (req, res) => {
   }
 
   if (messages.length && messages[0].chat_id !== ALLOWED_GROUP_ID) {
-    return res.sendStatus(200);
-  }
-  // console.log(`📥 Received ${messages.length} messages: `);
-  if (!messages.length) {
     return res.sendStatus(200);
   }
 
