@@ -56,6 +56,10 @@ const safetyObservationSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  contractor: {
+    type: String,
+    default: "unknown",
+  },
   actionTakenBy: {
     type: String,
   },

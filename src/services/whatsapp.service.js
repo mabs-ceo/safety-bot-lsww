@@ -140,12 +140,12 @@ async function processWhatsappMessage(message, isAuthorized = false) {
     const getValue = (line) =>
       line ? line.split(":").slice(1).join(":").trim() : "";
     const findingsText = getValue(lines[0]) || "unknown";
-    const party = getValue(lines[1]) || "unknown";
-    const location = getValue(lines[2]) || "unknown";
+    const party = getValue(lines[2]) || "unknown";
+    const location = getValue(lines[1]) || "unknown";
     console.log("✅ Getvalue");
     const rawFindings = getValue(lines[0]);
-    const rawParty = getValue(lines[1]);
-    const rawLocation = getValue(lines[2]);
+    const rawParty = getValue(lines[2]);
+    const rawLocation = getValue(lines[1]);
 
     const observedBy = message.from;
     const id = message.id;
@@ -159,7 +159,7 @@ async function processWhatsappMessage(message, isAuthorized = false) {
 
     if (!rawFindings || !rawParty || !rawLocation) {
       await replyToGroup(
-        `❌ Wrong format. Please use:\n\nfinding: [description]\nparty: [party]\nlocation: [location]`,
+        `❌ Wrong format. Please use:\n\nfinding: [description]\nlocation: [location]\ncontractor: [party]`,
         id,
       );
       return;

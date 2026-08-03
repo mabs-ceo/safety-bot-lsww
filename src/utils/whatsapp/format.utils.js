@@ -12,7 +12,7 @@ function formatSummary(observations, daily = false) {
     hour: "numeric",
     minute: "numeric",
   });
-  const header = `🚧 Open Safety Findings Requiring Follow-up | ${formattedDate}`;
+  const header = `🚧 Daily Safety Findings Reminder | ${formattedDate}`;
   let msg = daily ? ` *${header}*\n` : `📊 *OBSERVATION SUMMARY*\n`;
 
   msg += `━━━━━━━━━━━━━━━━━━━━\n`;
@@ -23,7 +23,9 @@ function formatSummary(observations, daily = false) {
     msg += `🔴 *OPEN CASES*\n`;
     open.forEach((o, i) => {
       msg += `\n${i + 1}. *${o.observationId}*\n`;
-      msg += `   📝 ${o.description}\n`;
+      msg += `   📝 ${o?.description}\n`;
+      msg += `   📝 ${o?.contractor}\n`;
+      msg += `   📝 ${o?.location ?? "N/A"}\n`;
     });
   }
 
@@ -31,8 +33,10 @@ function formatSummary(observations, daily = false) {
     msg += `🟡 *REOPENED CASES*\n`;
     reopened.forEach((o, i) => {
       msg += `\n${i + 1}. *${o.observationId}*\n`;
-      msg += `   📝 ${o.description}\n`;
-      msg += `   ⚠️ ${o.flagStatement}\n`;
+      msg += `   📝 ${o?.description}\n`;
+      msg += `   ⚠️ ${o?.flagStatement ?? "N/A"}\n`;
+      msg += `   📝 ${o?.contractor ?? "N/A"}\n`;
+      msg += `   📝 ${o?.location ?? "N/A"}\n`;
     });
   }
 
@@ -40,8 +44,11 @@ function formatSummary(observations, daily = false) {
     msg += `\n✅ *CLOSED CASES*\n`;
     closed.forEach((o, i) => {
       msg += `\n${i + 1}. *${o.observationId}*\n`;
-      msg += `   📝 ${o.description}\n`;
-      msg += `   📝 ${o.actionStatement}\n`;
+      msg += `   📝 ${o?.description ?? "N/A"}\n`;
+      msg += `   📝 ${o?.actionStatement ?? "N/A"}\n`;
+      msg += `   📝 ${o?.contractor ?? "N/A"}\n`;
+      msg += `   📝 ${o?.location ?? "N/A"}\n`;
+      msg += `   📝 ${o?.actionTakenBy ?? "N/A"}\n`;
     });
   }
 

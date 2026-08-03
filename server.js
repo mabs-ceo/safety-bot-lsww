@@ -167,9 +167,6 @@ app.post("/webhook", async (req, res) => {
       message.document?.caption;
     const context = message.context?.quoted_id || null;
 
-    console.log(
-      `✅ Processing message ${message.id}: ${message.video?.caption}`,
-    );
     if (context) {
       console.log(`✅ Quoted message context: ${context}`);
       let subKeyWOrd = "";
