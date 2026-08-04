@@ -185,7 +185,8 @@ async function processWhatsappMessage(message, isAuthorized = false) {
     // );
 
     await forwardToGroup(message.id);
-
+    // await replyToLSWWGroup(`👤 Observed by: ${observedBy}`, message.id);
+    await replyToLSWWGroup(`👤 Observed by: ${observedBy}`);
     return {
       type: "new-safety-observation",
       id: safetyObservationFinding,
